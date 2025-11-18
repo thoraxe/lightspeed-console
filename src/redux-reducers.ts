@@ -2,6 +2,7 @@ import { List as ImmutableList, Map as ImmutableMap } from 'immutable';
 
 import { ActionType, OLSAction } from './redux-actions';
 import { Attachment } from './types';
+import { QuestionType } from './types/QuestionType';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type OLSState = ImmutableMap<string, any>;
@@ -13,6 +14,7 @@ export type State = {
   sdkCore: {
     user: {
       username: string;
+      uid?: string;
     };
   };
 };
@@ -32,6 +34,7 @@ const reducer = (state: OLSState, action: OLSAction): OLSState => {
       openAttachment: null,
       openTool: ImmutableMap({ chatEntryIndex: null, id: null }),
       query: '',
+      questionType: QuestionType.GeneralQA,
     });
   }
 
@@ -59,7 +62,7 @@ const reducer = (state: OLSState, action: OLSAction): OLSState => {
     }
 
     case ActionType.ChatHistoryClear:
-      return state.set('chatHistory', ImmutableList());
+      return state.set('chatHistory', ImmutableList()).set('questionType', QuestionType.GeneralQA);
 
     case ActionType.chatHistoryUpdateByID: {
       const index = state
@@ -115,6 +118,9 @@ const reducer = (state: OLSState, action: OLSAction): OLSState => {
 
     case ActionType.SetQuery:
       return state.set('query', action.payload.query);
+
+    case ActionType.SetQuestionType:
+      return state.set('questionType', action.payload.questionType);
 
     case ActionType.UserFeedbackClose:
       return state.setIn(

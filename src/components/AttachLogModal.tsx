@@ -25,7 +25,6 @@ import {
   Slider,
   SliderOnChangeEvent,
   Spinner,
-  Text,
 } from '@patternfly/react-core';
 
 import { AttachmentTypes } from '../attachments';
@@ -137,11 +136,16 @@ const PodDropdown: React.FC<PodInputProps> = ({ pods, selectedPod, setPod }) => 
   const [isOpen, toggleIsOpen, , close, setIsOpen] = useBoolean(false);
 
   const onSelect = React.useCallback(
-    (_e: React.MouseEvent<Element, MouseEvent> | undefined, newPod: K8sResourceKind) => {
+    (_e: React.MouseEvent<Element, MouseEvent> | undefined, value: string | number | undefined) => {
       close();
-      setPod(newPod);
+      if (value) {
+        const newPod = pods.find((pod) => pod.metadata?.uid === value);
+        if (newPod) {
+          setPod(newPod);
+        }
+      }
     },
-    [close, setPod],
+    [close, setPod, pods],
   );
 
   return (
@@ -157,7 +161,7 @@ const PodDropdown: React.FC<PodInputProps> = ({ pods, selectedPod, setPod }) => 
     >
       <DropdownList>
         {pods.map((pod) => (
-          <DropdownItem key={pod.metadata?.uid} value={pod}>
+          <DropdownItem key={pod.metadata?.uid} value={pod.metadata?.uid}>
             <ResourceIcon kind="Pod" /> {pod.metadata?.name}
           </DropdownItem>
         ))}
@@ -383,11 +387,11 @@ const AttachLogModal: React.FC<AttachLogModalProps> = ({ isOpen, onClose, resour
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={t('Configure log attachment')}>
-      <Text>
+      <div>
         {t(
           'You can select a container and specify the most recent number of lines of its log file to include as an attachment for detailed troubleshooting and analysis.',
         )}
-      </Text>
+      </div>
       {scaleTargetError && (
         <Error title={t('Failed to load scale target')}>{scaleTargetError.message}</Error>
       )}

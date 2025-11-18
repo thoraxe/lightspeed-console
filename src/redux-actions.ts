@@ -1,6 +1,7 @@
 import { action, ActionType as Action } from 'typesafe-actions';
 
 import { Attachment, ChatEntry, CodeBlock, Tool } from './types';
+import { QuestionType } from './types/QuestionType';
 
 export enum ActionType {
   AddContextEvent = 'addContextEvent',
@@ -21,6 +22,7 @@ export enum ActionType {
   SetConversationID = 'setConversationID',
   SetIsContextEventsLoading = 'setIsContextEventsLoading',
   SetQuery = 'setQuery',
+  SetQuestionType = 'setQuestionType',
   UserFeedbackClose = 'userFeedbackClose',
   UserFeedbackDisable = 'userFeedbackDisable',
   UserFeedbackOpen = 'userFeedbackOpen',
@@ -87,6 +89,9 @@ export const setIsContextEventsLoading = (isLoading: boolean) =>
 
 export const setQuery = (query: string) => action(ActionType.SetQuery, { query });
 
+export const setQuestionType = (questionType: QuestionType) =>
+  action(ActionType.SetQuestionType, { questionType });
+
 export const userFeedbackClose = (entryIndex: number) =>
   action(ActionType.UserFeedbackClose, { entryIndex });
 
@@ -124,6 +129,7 @@ const actions = {
   setConversationID,
   setIsContextEventsLoading,
   setQuery,
+  setQuestionType,
   userFeedbackClose,
   userFeedbackDisable,
   userFeedbackOpen,

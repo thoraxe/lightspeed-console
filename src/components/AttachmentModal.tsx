@@ -12,8 +12,7 @@ import {
   Form,
   Split,
   SplitItem,
-  Text,
-  TextVariants,
+  Title,
 } from '@patternfly/react-core';
 import { PencilAltIcon, UndoIcon } from '@patternfly/react-icons';
 
@@ -30,14 +29,14 @@ const ResourceHeader: React.FC = () => {
   const attachment: Attachment = useSelector((s: State) => s.plugins?.ols?.get('openAttachment'));
 
   return (
-    <Text className="ols-plugin__code-block__title" component={TextVariants.h5}>
+    <Title className="ols-plugin__code-block__title" headingLevel="h5">
       <ResourceIcon kind={attachment?.kind} /> {attachment?.name}
       {isAttachmentChanged(attachment) && (
         <span className="ols-plugin__inline-icon">
           <PencilAltIcon />
         </span>
       )}
-    </Text>
+    </Title>
   );
 };
 

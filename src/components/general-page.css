@@ -52,6 +52,11 @@
   white-space: pre-line;
 }
 
+.ols-plugin__question-type-badge {
+  font-size: var(--pf-v5-global--FontSize--xs);
+  margin-left: var(--pf-v5-global--spacer--sm);
+}
+
 .ols-plugin__chat-history {
   overflow-y: auto;
   padding-bottom: 0;
@@ -179,6 +184,11 @@
 
 .ols-plugin__chat-prompt-input {
   min-height: var(--prompt-start-height);
+}
+
+.ols-plugin__question-type-selector {
+  height: var(--prompt-start-height);
+  min-width: 10rem;
 }
 
 .ols-plugin__context-label {

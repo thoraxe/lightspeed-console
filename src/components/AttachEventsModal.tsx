@@ -16,7 +16,6 @@ import {
   Slider,
   SliderOnChangeEvent,
   Spinner,
-  Text,
 } from '@patternfly/react-core';
 
 import { AttachmentTypes } from '../attachments';
@@ -129,11 +128,11 @@ const AttachEventsModal: React.FC<Props> = ({ isOpen, kind, name, namespace, onC
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={t('Configure events attachment')}>
-      <Text>
+      <div>
         {t(
           'You can specify the most recent number of events from this resource to include as an attachment for detailed troubleshooting and analysis.',
         )}
-      </Text>
+      </div>
       <Form>
         {isLoading && <Spinner size="md" />}
         {!isLoading &&

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { YellowExclamationTriangleIcon } from '@openshift-console/dynamic-plugin-sdk';
-import { ActionGroup, Button, Form, Text } from '@patternfly/react-core';
+import { ActionGroup, Button, Form } from '@patternfly/react-core';
 
 import Modal from './Modal';
 
@@ -24,11 +24,11 @@ const NewChatModal: React.FC<Props> = ({ isOpen, onClose, onConfirm }) => {
         </>
       }
     >
-      <Text>
+      <div>
         {t(
           'Are you sure you want to erase the current chat conversation and start a new chat? This action cannot be undone.',
         )}
-      </Text>
+      </div>
       <Form>
         <ActionGroup>
           <Button key="confirm" onClick={onConfirm} variant="danger">

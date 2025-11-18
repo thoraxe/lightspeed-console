@@ -24,7 +24,6 @@ const ConfirmationModal: React.FC<Props> = ({ handleRedirect }) => {
       isOpen={true}
       showClose={false}
       title={t('Do you want to leave this page?')}
-      titleIconVariant="warning"
       variant={ModalVariant.small}
     >
       {t('Changes you made may not be saved.')}

@@ -41,6 +41,7 @@ import { toOLSAttachment } from '../attachments';
 import { getApiUrl } from '../config';
 import { getFetchErrorMessage } from '../error';
 import { AuthStatus, getRequestInitWithAuthHeader, useAuth } from '../hooks/useAuth';
+import { useAutoContextDescription } from '../hooks/useAutoContextDescription';
 import { useBoolean } from '../hooks/useBoolean';
 import {
   attachmentDelete,
@@ -54,6 +55,8 @@ import {
 } from '../redux-actions';
 import { State } from '../redux-reducers';
 import { Attachment, ChatEntry, ReferencedDoc } from '../types';
+import { QuestionType } from '../types/QuestionType';
+import { getSystemPromptForType } from '../constants/systemPrompts';
 import AttachmentModal from './AttachmentModal';
 import AttachMenu from './AttachMenu';
 import AttachmentLabel from './AttachmentLabel';
@@ -62,6 +65,7 @@ import CopyAction from './CopyAction';
 import ImportAction from './ImportAction';
 import Feedback from './Feedback';
 import NewChatModal from './NewChatModal';
+import QuestionTypeSelector from './QuestionTypeSelector';
 import ReadinessAlert from './ReadinessAlert';
 import ResponseTools from './ResponseTools';
 import ToolModal from './ResponseToolModal';
@@ -197,16 +201,30 @@ const Code = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
+// Helper function to get the display label for question types
+const getQuestionTypeLabel = (questionType: QuestionType): string => {
+  const questionTypeLabels = {
+    [QuestionType.GeneralQA]: 'General Q&A',
+    [QuestionType.Troubleshooting]: 'Troubleshooting',
+    [QuestionType.BestPractices]: 'Best Practices',
+    [QuestionType.GettingStarted]: 'Getting Started',
+    [QuestionType.Configuration]: 'Configuration',
+  };
+  return questionTypeLabels[questionType] || 'General Q&A';
+};
+
 type ChatHistoryEntryProps = {
   conversationID: string;
   entry: ChatEntry;
   entryIndex: number;
+  questionType?: QuestionType;
 };
 
 const ChatHistoryEntry: React.FC<ChatHistoryEntryProps> = ({
   conversationID,
   entry,
   entryIndex,
+  questionType,
 }) => {
   const { t } = useTranslation('plugin__lightspeed-console-plugin');
 
@@ -269,7 +287,14 @@ const ChatHistoryEntry: React.FC<ChatHistoryEntryProps> = ({
   if (entry.who === 'user') {
     return (
       <div className="ols-plugin__chat-entry ols-plugin__chat-entry--user">
-        <div className="ols-plugin__chat-entry-name">You</div>
+        <div className="ols-plugin__chat-entry-name">
+          You
+          {questionType && (
+            <Badge className="ols-plugin__question-type-badge" isRead>
+              {getQuestionTypeLabel(questionType)}
+            </Badge>
+          )}
+        </div>
         <div className="ols-plugin__chat-entry-text">{entry.text}</div>
         {entry.attachments && Object.keys(entry.attachments).length > 0 && (
           <ExpandableSection
@@ -373,12 +398,15 @@ const GeneralPage: React.FC<GeneralPageProps> = ({ onClose, onCollapse, onExpand
 
   const conversationID: string = useSelector((s: State) => s.plugins?.ols?.get('conversationID'));
   const query: string = useSelector((s: State) => s.plugins?.ols?.get('query'));
+  const questionType: QuestionType = useSelector((s: State) => s.plugins?.ols?.get('questionType'));
 
   const [validated, setValidated] = React.useState<'default' | 'error'>('default');
 
   const [streamController, setStreamController] = React.useState(new AbortController());
 
   const [authStatus] = useAuth();
+
+  const autoContextDescription = useAutoContextDescription();
 
   const [isNewChatModalOpen, , openNewChatModal, closeNewChatModal] = useBoolean(false);
 
@@ -450,13 +478,32 @@ const GeneralPage: React.FC<GeneralPageProps> = ({ onClose, onCollapse, onExpand
       );
       scrollIntoView();
 
+      // Prepare attachments including hidden auto-context
+      const userAttachments = attachments.valueSeq().map(toOLSAttachment);
+      const allAttachments = autoContextDescription
+        ? [
+            ...userAttachments,
+            {
+              // eslint-disable-next-line camelcase
+              attachment_type: 'error message',
+              content: autoContextDescription,
+              // eslint-disable-next-line camelcase
+              content_type: 'text/plain',
+            },
+          ]
+        : userAttachments;
+
+      const systemPrompt = getSystemPromptForType(questionType);
+
       const requestJSON = {
-        attachments: attachments.valueSeq().map(toOLSAttachment),
+        attachments: allAttachments,
         // eslint-disable-next-line camelcase
         conversation_id: conversationID,
         // eslint-disable-next-line camelcase
         media_type: 'application/json',
         query,
+        // eslint-disable-next-line camelcase
+        system_prompt: systemPrompt,
       };
 
       const streamResponse = async () => {
@@ -557,7 +604,17 @@ const GeneralPage: React.FC<GeneralPageProps> = ({ onClose, onCollapse, onExpand
       dispatch(attachmentsClear());
       promptRef.current?.focus();
     },
-    [attachments, conversationID, dispatch, isStreaming, query, scrollIntoView, t],
+    [
+      attachments,
+      autoContextDescription,
+      conversationID,
+      dispatch,
+      isStreaming,
+      query,
+      questionType,
+      scrollIntoView,
+      t,
+    ],
   );
 
   const streamingResponseID: string = isStreaming
@@ -602,7 +659,7 @@ const GeneralPage: React.FC<GeneralPageProps> = ({ onClose, onCollapse, onExpand
 
   return (
     <Page>
-      <PageSection className={isWelcomePage ? undefined : 'ols-plugin__header'} variant="light">
+      <PageSection className={isWelcomePage ? undefined : 'ols-plugin__header'} variant="default">
         {onExpand && (
           <Button
             className="ols-plugin__popover-control"
@@ -656,13 +713,19 @@ const GeneralPage: React.FC<GeneralPageProps> = ({ onClose, onCollapse, onExpand
         className="ols-plugin__chat-history"
         hasOverflowScroll
         isFilled
-        variant="light"
+        variant="default"
       >
         {isWelcomePage && <Welcome />}
         <AuthAlert authStatus={authStatus} />
         <PrivacyAlert />
         {chatHistory.toJS().map((entry: ChatEntry, i: number) => (
-          <ChatHistoryEntry conversationID={conversationID} entry={entry} entryIndex={i} key={i} />
+          <ChatHistoryEntry
+            conversationID={conversationID}
+            entry={entry}
+            entryIndex={i}
+            key={i}
+            questionType={entry.who === 'user' ? questionType : undefined}
+          />
         ))}
         <AttachmentsSizeAlert />
         <ReadinessAlert />
@@ -670,11 +733,14 @@ const GeneralPage: React.FC<GeneralPageProps> = ({ onClose, onCollapse, onExpand
       </PageSection>
 
       {authStatus !== AuthStatus.NotAuthenticated && authStatus !== AuthStatus.NotAuthorized && (
-        <PageSection className="ols-plugin__chat-prompt" isFilled={false} variant="light">
+        <PageSection className="ols-plugin__chat-prompt" isFilled={false} variant="default">
           <Form onSubmit={isStreaming ? onStreamCancel : onSubmit}>
             <Split hasGutter>
               <SplitItem>
                 <AttachMenu />
+              </SplitItem>
+              <SplitItem>
+                <QuestionTypeSelector isDisabled={isStreaming} />
               </SplitItem>
               <SplitItem isFilled>
                 <TextArea
